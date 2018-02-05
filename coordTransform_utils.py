@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
-import urllib
 import math
+import requests
 
 x_pi = 3.14159265358979324 * 3000.0 / 180.0
 pi = 3.1415926535897932384626  # π
@@ -23,11 +23,11 @@ class Geocoding:
                      'key': self.api_key,
                      'city': '全国',
                      'address': address}
-        geocoding = urllib.urlencode(geocoding)
-        ret = urllib.urlopen("%s?%s" % ("http://restapi.amap.com/v3/geocode/geo", geocoding))
+        # geocoding = urllib.urlencode(geocoding)
+        ret = requests.post("http://restapi.amap.com/v3/geocode/geo", data=geocoding)
 
-        if ret.getcode() == 200:
-            res = ret.read()
+        if ret.status_code == 200:
+            res = ret.text
             json_obj = json.loads(res)
             if json_obj['status'] == '1' and int(json_obj['count']) >= 1:
                 geocodes = json_obj['geocodes'][0]
@@ -172,4 +172,4 @@ if __name__ == '__main__':
 
     g = Geocoding('API_KEY')  # 这里填写你的高德api的key
     result7 = g.geocode('北京市朝阳区朝阳公园')
-    print result1, result2, result3, result4, result5, result6, result7
+    print(result1, result2, result3, result4, result5, result6, result7)
