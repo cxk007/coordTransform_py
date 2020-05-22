@@ -2,6 +2,8 @@
 import json
 import math
 import requests
+import pandas as pd
+import ast
 
 x_pi = 3.14159265358979324 * 3000.0 / 180.0
 pi = 3.1415926535897932384626  # π
@@ -159,16 +161,44 @@ def out_of_china(lng, lat):
     return not (lng > 73.66 and lng < 135.05 and lat > 3.86 and lat < 53.55)
 
 
-if __name__ == '__main__':
-    lng = 128.543
-    lat = 37.065
-    result1 = gcj02_to_bd09(lng, lat)
-    result2 = bd09_to_gcj02(lng, lat)
-    result3 = wgs84_to_gcj02(lng, lat)
-    result4 = gcj02_to_wgs84(lng, lat)
-    result5 = bd09_to_wgs84(lng, lat)
-    result6 = wgs84_to_bd09(lng, lat)
+def bd09_to_gcj02_df(geo_coding_str):
+    """
+    主要是传入dataframe类型后，使用apply函数直接对list形式的经纬度进行转换，形式为[121.546428，31.165464]
+    百度坐标系(BD-09)转火星坐标系(GCJ-02)
+    百度——>谷歌、高德
+    :geo_coding_str 传入参数为df 内的经纬度列表，类型为string 类型，函数会将这个str类型转换成list类型
+    :return:转换后的坐标列表形式
+    """
+    geo_coding_list = ast.literal_eval(geo_coding_str)
+    bd_lon = geo_coding_list[0]
+    bd_lat = geo_coding_list[1]
+    x = float(bd_lon) - 0.0065
+    y = float(bd_lat) - 0.006
+    z = math.sqrt(x * x + y * y) - 0.00002 * math.sin(y * x_pi)
+    theta = math.atan2(y, x) - 0.000003 * math.cos(x * x_pi)
+    gg_lng = z * math.cos(theta)
+    gg_lat = z * math.sin(theta)
+    return [gg_lng, gg_lat]
 
-    g = Geocoding('44cb84e0072020becc36da48957c00ac')  # 这里填写你的高德api的key
-    result7 = g.geocode('北京市朝阳区朝阳公园')
-    print(result1, result2, result3, result4, result5, result6, result7)
+
+if __name__ == '__main__':
+    # lng = 118.787094
+    # lat = 32.051495
+    # result1 = gcj02_to_bd09(lng, lat)
+    # print(result1)
+    # result2 = bd09_to_gcj02(lng, lat)
+    # result3 = wgs84_to_gcj02(lng, lat)
+    # result4 = gcj02_to_wgs84(lng, lat)
+    # result5 = bd09_to_wgs84(lng, lat)
+    # result6 = wgs84_to_bd09(lng, lat)
+    #
+    # g = Geocoding('44cb84e0072020becc36da48957c00ac')  # 这里填写你的高德api的key
+    # result7 = g.geocode('北京市朝阳区朝阳公园')
+    # print(result7)
+    file_location = r'D:\My Drive\2.Projects\0.项目文件\33. 米其林项目\202005_米其林门店和点评门店去重\202005_数据库内大众点评爱车数据清单（经纬度）.xlsx'
+    bd_source_df = pd.read_excel(file_location)
+    print(bd_source_df)
+    bd_source_df['gcj02_lng_lat'] = bd_source_df['baidu_lng_lat'].apply(bd09_to_gcj02_df)
+    bd_source_df.to_excel(r'D:\My Drive\2.Projects\0.项目文件\33. 米其林项目\202005_米其林门店和点评门店去重\202005_数据库内大众点评爱车数据清单（经纬度转换）.xlsx')
+
+
